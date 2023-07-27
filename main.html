@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Skin Sense AI</title>
+    <link href='https://fonts.googleapis.com/css?family=Poppins' rel='stylesheet'>
+    <link
+      rel="apple-touch-icon"
+      sizes="180x180"
+      href="favicon/apple-touch-icon.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="32x32"
+      href="favicon/favicon-32x32.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="16x16"
+      href="favicon/favicon-16x16.png"
+    />
+    <style>
+        @font-face {
+            font-family: 'Quartzo';
+            src: url('/Fonts/Quartzo.ttf') format('truetype');
+        }
+
+        @font-face {
+            font-family: 'Brielle';
+            src: url('/Fonts/Brielle.otf') format('opentype');
+        }
+
+        @font-face {
+            font-family: 'Welanger';
+            src: url('/Fonts/Welanger.ttf') format('truetype');
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #ACC8E5;
+            color: #333;
+        }
+
+        #webcam-container {
+            width: 310px;
+            height: 260px;
+            margin-top: 20px;
+            border: 2.35px solid #ddd;
+        }
+
+        .bar-container {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .bar {
+            width: 200px;
+            height: 30px;
+            margin-top: 5px;
+            border-radius: 10px;
+            overflow: hidden;
+            background-color: #ddd;
+            border: 2px solid #ddd;
+        }
+
+        .bar-fill {
+            height: 100%;
+            border-radius: 10px;
+        }
+
+        .bar-label {
+            font-size: 19px;
+            width: 100px;
+            font-family: 'Welanger', sans-serif;
+            color: #112A46;
+            text-align: right;
+            padding-right: 10px;
+        }
+
+        .bar.normal-skin .bar-fill {
+            background-color: #2ECC71;
+        }
+
+        .bar.skin-with-cancer .bar-fill {
+            background-color: #E74C3C;
+        }
+
+        .bar.skin-with-cuts .bar-fill {
+            background-color: #E67E22;
+        }
+
+        .bar.skin-not-visible .bar-fill {
+            background-color: #F1C40F;
+        }
+
+        button {
+            padding: 8px 16px;
+            font-size: 20px;
+            background-color: #112A46;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            margin-top: 8px;
+            font-family: 'Poppins';
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        div1 {
+            font-family: 'Quartzo', sans-serif;
+            font-size: 62px;
+            font-weight: bold;
+            color: #112A46;
+        }
+
+        .svg-icon {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+
+<body>
+    <div1>SKIN SENSE AI</div1>
+    <button type="button" onclick="init()">
+        <svg class="svg-icon" xmlns="http://www.w3.org/2000/svg" fill="#ffffff" height="0.9em" viewBox="0 0 512 512">
+            <path d="M149.1 64.8L138.7 96H64C28.7 96 0 124.7 0 160V416c0 35.3 28.7 64 64 64H448c35.3 0 64-28.7 64-64V160c0-35.3-28.7-64-64-64H373.3L362.9 64.8C356.4 45.2 338.1 32 317.4 32H194.6c-20.7 0-39 13.2-45.5 32.8zM256 192a96 96 0 1 1 0 192 96 96 0 1 1 0-192z" />
+        </svg>
+        Use Webcam
+    </button>
+    <body>
+        <div id="webcam-container">
+            <canvas id="webcam-canvas" width="310" height="260"></canvas>
+        </div>
+    </body>
+
+    <div class="bar-container">
+        <div class="bar-label">Normal Skin</div>
+        <div class="bar normal-skin">
+            <div class="bar-fill"></div>
+        </div>
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Skin with Cancer</div>
+        <div class="bar skin-with-cancer">
+            <div class="bar-fill"></div>
+        </div>
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Skin with Cuts and Wounds</div>
+        <div class="bar skin-with-cuts">
+            <div class="bar-fill"></div>
+        </div>
+    </div>
+    <div class="bar-container">
+        <div class="bar-label">Skin Not Visible</div>
+        <div class="bar skin-not-visible">
+            <div class="bar-fill"></div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+
+        const URL = "https://teachablemachine.withgoogle.com/models/r5WOfO-KX/";
+        let model, webcam, maxPredictions;
+
+        async function init() {
+        const modelURL = URL + "model.json";
+        const metadataURL = URL + "metadata.json";
+        model = await tmImage.load(modelURL, metadataURL);
+        maxPredictions = model.getTotalClasses();
+
+        const flip = true;
+        webcam = new tmImage.Webcam(310, 260, flip);
+
+        const webCamCanvas = document.getElementById("webcam-canvas");
+        await webcam.setup();
+        await webcam.play();
+        setInterval(() => {
+            webcam.update();
+        }, 100);
+
+        const ctx = webCamCanvas.getContext("2d");
+        setInterval(() => {
+            ctx.drawImage(webcam.canvas, 0, 0, 310, 260);
+            predict();
+        }, 1);
+    }
+
+        async function predict() {
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const probability = prediction[i].probability.toFixed(2);
+                const barFill = document.querySelectorAll('.bar-fill')[i];
+                barFill.style.width = `${probability * 100}%`;
+            }
+        }
+
+        function importImage() {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = 'image/*';
+            input.onchange = async function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const imageUrl = URL.createObjectURL(file);
+                    const image = new Image();
+                    image.onload = async function () {
+                        await predictImage(image);
+                    };
+                    image.src = imageUrl;
+                }
+            };
+            input.click();
+        }
+
+        async function predictImage(image) {
+            const prediction = await model.predict(image);
+            for (let i = 0; i < maxPredictions; i++) {
+                const probability = prediction[i].probability.toFixed(2);
+                const barFill = document.querySelectorAll('.bar-fill')[i];
+                barFill.style.width = `${probability * 100}%`;
+            }
+        }
+        </script>
+        
+    </body>
+</html>
